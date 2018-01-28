@@ -58,7 +58,7 @@ def create_unet(in_shape=[1, 256, 256, 3], out_channels=1, depth=5, training=Tru
 
         # final output layer, out_channels classes
         net = tf.contrib.layers.conv2d(net, num_outputs=out_channels, kernel_size=(1, 1), activation_fn=None)
-        net = tf.nn.sigmoid(net)
+        net = tf.nn.sigmoid(net, name='output')
 
     return net
 
