@@ -35,7 +35,7 @@ val_files = data_files[int(len(data_files)*training_split):]
 def load_batch(datafiles):
     "Loads a batch of data from the data directory. See description above."
     batch = [[], []]
-    while len(data) < batch_size:
+    while len(batch) < batch_size:
         idx = np.random.randint(0, len(datafiles)-1)
         sample = np.load(join(data_dir, datafiles[idx]))
         batch[0].append(sample['x'])

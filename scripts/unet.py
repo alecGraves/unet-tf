@@ -35,6 +35,7 @@ def create_unet(in_shape=[1, 256, 256, 3], out_channels=1, depth=5, training=Tru
                 # save the output
                 down_outputs.append(net)
 
+        # start up with the last output
         net = down_outputs.pop()
 
         # unet up
