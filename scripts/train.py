@@ -16,10 +16,10 @@ from unet import create_unet
 from losses import iou_loss
 
 ### set these parameteres ###
-train_data_dir = '/home/$USER/Desktop/data'
+data_dir = 'D:\\data\\road_detector\\image_data'
 training_split = .97
 unet_depth = 3
-batch_size = 16
+batch_size = 1
 num_epochs = 1
 network_name = 'net' # used for training and scope
 save_path = join('..', 'training', 'weights')
@@ -27,20 +27,20 @@ save_path = join('..', 'training', 'weights')
 
 ### Data Management ###
 # read the data files
-data_files = os.listdir(train_data_dir)
+data_files = os.listdir(data_dir)
 train_files = data_files[:int(len(data_files)*training_split)]
 val_files = data_files[int(len(data_files)*training_split):]
 
 # function to load the batches
-def load_batch(datafiles):
-    "Loads a batch of data from the data directory. See description above."
+def load_batch(datafiles, shape=[256, 256]):
+    """Loads a batch of data from the data directory. See description above."""
     batch = [[], []]
-    while len(batch) < batch_size:
+    while len(batch[0]) < batch_size:
         idx = np.random.randint(0, len(datafiles)-1)
         sample = np.load(join(data_dir, datafiles[idx]))
         batch[0].append(sample['x'])
         batch[1].append(sample['y'])
-    return np.array(batch)
+    return [np.array(b) for b in batch]
 
 ### Building the Graph ###
 def connect_loss(batch, net):
@@ -70,14 +70,14 @@ def connect_saver(save_path=None, save_vars=None):
 
 ### Training  ###
 with tf.Session() as sess:
-    batch = load_batch()
-
+    batch = load_batch(train_files)
+    print([_.shape for _ in batch])
     # build the network graph
     net = create_unet(in_shape=batch[0].shape, out_channels=batch[1][0].shape[-1], name=network_name)
     net_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, network_name)
     assert(len(net_vars) > 0) # assert valid variables to save
 
-    loss = connnect_loss(batch, net)
+    loss = connect_loss(batch, net)
     train_op = connect_optimizer(loss, train_vars=net_vars)
 
     saver = connect_saver(save_path=save_path, save_vars=net_vars)
@@ -91,7 +91,7 @@ with tf.Session() as sess:
 
         # test on a validation batch
         if i % 10 == 0:
-            batch = train_batch(val_files)
+            batch = load_batch(val_files)
             score = sess.run(loss, feed_dict={network_name+'/input:0':batch[0], net:batch[1]})
             losses['val'].append(score)
 

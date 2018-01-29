@@ -20,7 +20,7 @@ def create_unet(in_shape=[1, 256, 256, 3], out_channels=1, depth=5, training=Tru
             with tf.name_scope('down_'+str(i)):
                 # downsample image if not the input
                 if i > 0:
-                    net = tf.contrib.layers.max_pool2d(net, kernel_size=(3, 3), padding='SAME')
+                    net = tf.contrib.layers.max_pool2d(net, kernel_size=(3, 3))#, padding='SAME')
                 
                 # conv block 1
                 net = tf.contrib.layers.conv2d(net,num_outputs=32*(2**i), kernel_size=(3, 3), activation_fn=None)
