@@ -10,7 +10,7 @@ def iou_loss(y_true, y_pred):
 
     # calculate intersection and union
     intersection = tf.multiply(y_true, y_pred)
-    union = tf.subtract(tf.add(y_true, y_pred), intersecion)
+    union = tf.subtract(tf.add(y_true, y_pred), intersection)
 
     # calculate iou loss
     iou = tf.divide(tf.reduce_sum(intersection), tf.reduce_sum(union))
