@@ -9,6 +9,7 @@ model weights are saved in ../training/weights
 '''
 import os
 import numpy as np
+from skimage.transform import rotate
 import tensorflow as tf
 join = os.path.join
 
@@ -32,14 +33,30 @@ train_files = data_files[:int(len(data_files)*training_split)]
 val_files = data_files[int(len(data_files)*training_split):]
 
 # function to load the batches
-def load_batch(datafiles, shape=[256, 256]):
+def load_batch(datafiles, shape=[256, 256], flip_prob=.4, rotate_prob=.2, rotate_angle=[-45, 45]):
     """Loads a batch of data from the data directory. See description above."""
     batch = [[], []]
+    idx = np.random.randint(0, len(datafiles)-1)
+    sample = np.load(join(data_dir, datafiles[idx]))
+    # sample = [np.random.randn(1300, 1300, 7), np.random.randn(1300, 1300, 2)]
     while len(batch[0]) < batch_size:
-        idx = np.random.randint(0, len(datafiles)-1)
-        sample = np.load(join(data_dir, datafiles[idx]))
-        batch[0].append(sample['x'])
-        batch[1].append(sample['y'])
+        data = sample['x']
+        label = sample['y']
+        x_idx = np.random.randint(0, data.shape[0]-shape[0])
+        y_idx = np.random.randint(0, data.shape[1]-shape[1])
+        if np.random.random() < flip_prob:
+            if np.random.random() < 0.5:
+                data = data[:,::-1,...]
+                label = label[:,::-1,...]
+            else:
+                data = data[::-1,:,...]
+                label = label[::-1,:,...]
+        if np.random.random() < rotate_prob:
+            angle = np.random.randint(rotate_angle[0], rotate_angle[1])
+            data = rotate(data, angle)
+            label = rotate(label, angle)
+        batch[0].append(data[x_idx:x_idx+shape[0], y_idx:y_idx+shape[1]])
+        batch[1].append(label[x_idx:x_idx+shape[0], y_idx:y_idx+shape[1]])
     return [np.array(b) for b in batch]
 
 ### Building the Graph ###
