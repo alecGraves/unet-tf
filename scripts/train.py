@@ -15,8 +15,8 @@ import tensorflow as tf
 join = os.path.join
 
 from unet import create_unet
-from losses import iou_loss
-from data import preprocess_image
+from losses import crossentropy_loss, iou_loss
+from data import preprocess_label
 
 ### set these parameteres ###
 data_dir = 'C:\\data\\image_data'
@@ -41,28 +41,32 @@ def load_batch(datafiles, shape=[256, 256], flip_prob=.4, rotate_prob=.2, rotate
     batch = [[], []]
     idx = np.random.randint(0, len(datafiles)-1)
     sample = np.load(join(data_dir, datafiles[idx]))
+    data = sample['x']
+    data = np.add(data, 1.0)
+    label = sample['y']
+    label = np.expand_dims(label[:,:,0], -1)
+    label = preprocess_label(label) # oops TODO: do this when saving data.
     # sample = [np.random.randn(1300, 1300, 7), np.random.randn(1300, 1300, 2)]
     while len(batch[0]) < batch_size:
-        data = sample['x']
-        label = sample['y']
         # print(np.max(label))
         # exit()
-        label = preprocess_image(label) # oops TODO: do this when saving data.
         x_idx = np.random.randint(0, data.shape[0]-shape[0])
         y_idx = np.random.randint(0, data.shape[1]-shape[1])
+        batch_data = data[x_idx:x_idx+shape[0], y_idx:y_idx+shape[1]]
+        batch_label = label[x_idx:x_idx+shape[0], y_idx:y_idx+shape[1]]
         if np.random.random() < flip_prob:
             if np.random.random() < 0.5:
-                data = data[:,::-1,...]
-                label = label[:,::-1,...]
+                batch_data = batch_data[:,::-1,...]
+                batch_label = batch_label[:,::-1,...]
             else:
-                data = data[::-1,:,...]
-                label = label[::-1,:,...]
-        if np.random.random() < rotate_prob:
-            angle = np.random.randint(rotate_angle[0], rotate_angle[1])
-            data = rotate(data, angle)
-            label = rotate(label, angle)
-        batch[0].append(data[x_idx:x_idx+shape[0], y_idx:y_idx+shape[1]])
-        batch[1].append(label[x_idx:x_idx+shape[0], y_idx:y_idx+shape[1]])
+                batch_data = batch_data[::-1,:,...]
+                batch_label = batch_label[::-1,:,...]
+        # if np.random.random() < rotate_prob: # dont use, causes white boarders
+        #     angle = np.random.randint(rotate_angle[0], rotate_angle[1])
+        #     batch_data = rotate(batch_data, angle)
+        #     batch_label = rotate(batch_label, angle)
+        batch[0].append(batch_data)
+        batch[1].append(batch_label)
     print('loading complete')
     return [np.array(b) for b in batch]
 
@@ -72,16 +76,16 @@ def connect_loss(batch, net):
     returns loss tensor'''
     with tf.name_scope('loss'):
         label = tf.placeholder(tf.float32, shape=batch[1].shape, name='label')
-        loss = iou_loss(label, net)
+        loss = iou_loss(label, net, batch[1].shape[-1])
     return loss
 
-def connect_optimizer(cost, learning_rate=0.0001, train_vars=None):
+def connect_optimizer(cost, learning_rate=1e-5, train_vars=None):
     '''connects optimizer to the graph,
     give it the cost tensor to minimize.
     returns the training op.'''
     with tf.name_scope('optimizer'):
         optimizer = tf.train.AdamOptimizer(learning_rate)
-        train_op = optimizer.minimize(cost, var_list=train_vars)
+        train_op = optimizer.minimize(cost, var_list=train_vars, colocate_gradients_with_ops=True)
     return train_op
 
 def check_path(save_path=None):
@@ -92,25 +96,31 @@ def check_path(save_path=None):
 if __name__ == "__main__":
     ### Training  ###
     with tf.Session() as sess:
-        batch = load_batch(train_files)
+        with tf.device('/gpu:0'):
+            batch = load_batch(train_files)
 
-        # build the network graph
-        net = create_unet(in_shape=batch[0].shape, out_channels=batch[1][0].shape[-1], name=network_name)
+            # build the network graph
+            net = create_unet(in_shape=batch[0].shape, out_channels=batch[1][0].shape[-1], name=network_name)
 
-        loss = connect_loss(batch, net)
-        train_op = connect_optimizer(loss)
+        with tf.device('/cpu:0'):
+            saver = tf.train.Saver()
+            check_path(save_path)
 
-        saver = tf.train.Saver()
-        check_path(save_path)
+        with tf.device('/gpu:0'):
+            loss = connect_loss(batch, net)
+            train_op = connect_optimizer(loss)
+
+
         sess.run(tf.global_variables_initializer())
 
         losses = {'train' : [], 'val' : [], 'avgVal' : 1000000000}
         for i in range(num_epochs*len(train_files)):
             # train on a batch
             batch = load_batch(train_files)
+            print('run')
             _, score = sess.run([train_op, loss], feed_dict={network_name+'/input:0':batch[0], 'loss/label:0':batch[1]})
             losses['train'].append(score)
-
+            print('run complete')
             # test on a validation batch
             if i % 10 == 0:
                 batch = load_batch(val_files)

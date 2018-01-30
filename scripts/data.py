@@ -28,6 +28,17 @@ def unprocess_image(x, bits=8):
         ValueError('bits must be 8 or 16')
     return x
 
+def preprocess_label(x):
+    x = x.astype(np.float64)
+    x = np.divide(x, 255)
+    x = x.astype(np.float16) # 16 bit for storage space
+    return x
+
+def unprocess_label(x):
+    x = np.multiply(x, 255)
+    x = x.astype(np.uint8)
+    return x
+
 if __name__ == "__main__":
     # for my files, the last integer in the filename is the data image number.
     name_key = lambda x : int(''.join([s for s in x[x.find('img'):] if s.isdigit()]))

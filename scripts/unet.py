@@ -24,12 +24,12 @@ def create_unet(in_shape=[1, 256, 256, 3], out_channels=1, depth=5, training=Tru
                 
                 # conv block 1
                 net = tf.contrib.layers.conv2d(net,num_outputs=32*(2**i), kernel_size=(3, 3), activation_fn=None)
-                net = tf.nn.selu(net, name='act_1')
+                net = tf.nn.relu(net, name='act_1')
                 net = tf.contrib.layers.batch_norm(net, is_training=training)
                 
                 # conv block 2
                 net = tf.contrib.layers.conv2d(net,num_outputs=32*(2**i), kernel_size=(3, 3), activation_fn=None)
-                net = tf.nn.selu(net, name='act_2')
+                net = tf.nn.relu(net, name='act_2')
                 net = tf.contrib.layers.batch_norm(net, is_training=training)
 
                 # save the output
@@ -42,25 +42,24 @@ def create_unet(in_shape=[1, 256, 256, 3], out_channels=1, depth=5, training=Tru
         for i in range(depth-1):
             with tf.name_scope('up_'+str(i)):
                 # upsample the ouput
-                _, h, w, _ = net.get_shape().as_list()
-                net = tf.image.resize_bicubic(net, size=(2*h, 2*w),name='upsample_2x')
+                bat, h, w, chan = net.get_shape().as_list()
+                net = tf.contrib.layers.conv2d_transpose(net, chan, (2, 2), stride=(2, 2), padding='same')
 
                 # concatenate and dropout
                 net = tf.concat([net, down_outputs.pop()], axis=-1, name='concat')
-                net = tf.contrib.layers.dropout(net, keep_prob=0.6, is_training=training)
+                # net = tf.contrib.layers.dropout(net, keep_prob=0.9, is_training=training)
                 
                 # conv block 1
                 net = tf.contrib.layers.conv2d(net,num_outputs=32*(2**(depth-(i+2))), kernel_size=(3, 3), activation_fn=None)
-                net = tf.nn.selu(net, name='act_1')
+                net = tf.nn.relu(net, name='act_1')
 
                 # conv block 2
                 net = tf.contrib.layers.conv2d(net,num_outputs=32*(2**(depth-(i+2))), kernel_size=(3, 3), activation_fn=None)
-                net = tf.nn.selu(net, name='act_2')
+                net = tf.nn.relu(net, name='act_2')
 
         # final output layer, out_channels classes
         net = tf.contrib.layers.conv2d(net, num_outputs=out_channels, kernel_size=(1, 1), activation_fn=None)
-        net = tf.nn.sigmoid(net, name='output')
-
+        net = tf.nn.sigmoid(net)
     return net
 
 if __name__ == '__main__':
