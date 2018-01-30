@@ -8,30 +8,29 @@ from os.path import join
 import cv2
 import numpy as np
 
-def preprocess_image(x, bits=8):
-    x = x.astype(np.float16) # 16 bit for storage space
-    x = np.divide(x, 2**bits-1) 
-    x = np.subtract(x, 0.5) 
-    x = np.multiply(x, 2.0) 
-    return x
-
-def unprocess_image(x, bits=8):
-    x = x.astype(np.float16)
-    x = np.divide(x, 2.0)
-    x = np.add(x, 0.5)
-    x = np.multiply(x, 2**bits-1)
-    if bits == 8:
-        x = x.astype(np.uint8)
-    elif bits == 16:
-        x = x.astype(np.uint16)
+def preprocess_image(x, mean=None, std=None):
+    x = x.astype(np.float64)
+    x = np.divide(x, np.max(np.max(x, axis=0), axis=0).reshape(1, 1, x.shape[-1]))
+    if mean is not None and std is not None:
+        x = (x - np.array(mean).reshape(1,1,x.shape[-1])) / np.array(std).reshape(1,1,x.shape[-1]) 
     else:
-        ValueError('bits must be 8 or 16')
+        x = np.subtract(x, 0.5)
+        x = np.multiply(x, 2.0)
+    return x.astype(np.float16)
+
+def unprocess_image(x, mean=None, std=None):
+    if mean is not None and std is not None:
+        x = (x + np.array(mean).reshape(1,1,x.shape[-1])) * np.array(std).reshape(1,1,x.shape[-1])
+    else:
+        x = np.divide(x, 2.0)
+        x = np.add(x, 0.5)
+    x = np.multiply(x, 2**bits-1)
+    x = x.astype(np.uint8)
     return x
 
 def preprocess_label(x):
-    x = x.astype(np.float64)
+    x = x.astype(np.float16)
     x = np.divide(x, 255)
-    x = x.astype(np.float16) # 16 bit for storage space
     return x
 
 def unprocess_label(x):
@@ -70,18 +69,11 @@ if __name__ == "__main__":
         input_files = [input_file_lists[i][input_file_idx[i]] for i in range(len(input_file_idx))]
         x = [cv2.imread(join(input_data_dirs[i], input_files[i]), cv2.IMREAD_UNCHANGED) for i in range(len(input_file_idx))]
         
-        for i, x_i in enumerate(x):
-            if x_i.dtype == 'uint8':
-                bits = 8
-            elif x_i.dtype == 'uint16':
-                bits = 16
-            x_i *= np.uint16((2**bits-1)/np.max(np.max(x_i, axis=0), axis=0)) # expand image to use full channel range
-            x_i = preprocess_image(x_i, bits=bits)
-            x[i] = x_i
+        x = [preprocess_image(x_i) for x_i in x]
         x = np.concatenate(x, axis=-1)
 
         # Show image layers and exit:
-        # x = unprocess_image(x, 8)
+        x = unprocess_image(x, 8)
         # for i in range(x.shape[-1]):
         #     cv2.imshow('image', x[:, :, i])
         #     cv2.waitKey(2000)
