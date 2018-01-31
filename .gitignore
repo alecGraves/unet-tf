@@ -1,6 +1,6 @@
 # tf graph stuff
 weights/
-
+.vscode/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
