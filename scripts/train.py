@@ -35,7 +35,7 @@ epochs = 10
 steps_per_epoch = 28*75 # 28 npz's averaging 75 images a piece
 train_dir = 'D:\\data\\road_detector\\train'
 val_dir = 'D:\\data\\road_detector\\val'
-load_from_checkpoint = ''
+load_from_checkpoint = 'C:\\Users\\alec0\\Documents\\GitHub\\unet-tf\\training\\weightsmodel-6299'
 checkpoint_path = os.path.join('..', 'training', 'weights')
 tensorboard_path = os.path.join('..', 'training', 'logs')
 train_generator = data_generator(train_dir, batch_size=batch_size, shape=img_shape, flip_prob=.4)
@@ -94,7 +94,7 @@ with sess.as_default():
     for it in range(start, tot_iter):
         if it % steps_per_epoch == 0 or it == start:
             
-            saver.save(sess, checkpoint_path+'model', global_step=global_step)
+            saver.save(sess, os.path.join(checkpoint_path, 'model'), global_step=global_step)
             print ('save a checkpoint at '+ checkpoint_path+'model-'+str(it))
             print ('start testing {} samples...'.format(num_test_samples))
             for ti in range(num_test_samples):
@@ -123,6 +123,9 @@ with sess.as_default():
         score = IOU(1/(1+np.exp(-pred_logits[0])), y_batch[0])
 
        
-        if it % 20 == 0 : 
-            print ('[iter %d, epoch %.3f]: lr=%f loss=%f, mean_IOU=%f' % (it, float(it)/steps_per_epoch, lr, loss, score))
+        if it % 20 == 0 :
+            try:
+                print ('[iter {}, epoch {}]: lr={} loss={}, IOU={}'.format(it, float(it)/steps_per_epoch, lr, loss, score))
+            except:
+                pass
         
