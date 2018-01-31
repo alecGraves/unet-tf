@@ -1,5 +1,7 @@
 # tf graph stuff
-weights/
+training/
+
+#editorz
 .vscode/
 
 # Byte-compiled / optimized / DLL files

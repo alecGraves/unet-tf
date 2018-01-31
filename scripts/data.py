@@ -128,15 +128,17 @@ def data_generator(data_dir, batch_size=8, shape=[256, 256], flip_prob=.4):
     while True:
         for npz_file in os.listdir(data_dir):
             data = np.load(join(data_dir, npz_file))
-            data_len = data['x'].shape[0]
+            data_x =  data['x']
+            data_y = data['y']
+            data_len = data_x.shape[0]
             for i in range(data_len):
                 image, mask = ([], [])
                 for i in range(batch_size):
                     data_idx = np.random.randint(0, data_len)
-                    x_idx = np.random.randint(0, data.shape[0]-shape[0]) # cropping indices
-                    y_idx = np.random.randint(0, data.shape[1]-shape[1])
-                    x = data['x'][data_idx, x_idx:x_idx+shape[0], y_idx:y_idx+shape[1], :]
-                    y = data['y'][data_idx, x_idx:x_idx+shape[0], y_idx:y_idx+shape[1], :]
+                    x_idx = np.random.randint(0, data_x.shape[1]-shape[0]) # cropping indices
+                    y_idx = np.random.randint(0, data_x.shape[2]-shape[1])
+                    x = data_x[data_idx, x_idx:x_idx+shape[0], y_idx:y_idx+shape[1], :]
+                    y = data_y[data_idx, x_idx:x_idx+shape[0], y_idx:y_idx+shape[1], :]
                     if np.random.random() < flip_prob:
                         if np.random.random() < 0.5:
                             x = x[:,::-1,:]
