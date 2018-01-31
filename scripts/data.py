@@ -58,7 +58,8 @@ if __name__ == "__main__":
     label_files_lists = [os.listdir(label_data_dir) for label_data_dir in label_data_dirs]
     label_keys_lists = [[name_key(f) for f in label_files] for label_files in label_files_lists]
 
-
+    x = []
+    y = []
     dataset_name = os.path.basename(label_data_dirs[0])
     for j, label_file in enumerate(label_files_lists[0]):
         img_number = label_keys_lists[0][j]
@@ -67,25 +68,34 @@ if __name__ == "__main__":
         except ValueError: # input image_number is not in the list of files
             continue
         input_files = [input_file_lists[i][input_file_idx[i]] for i in range(len(input_file_idx))]
-        x = [cv2.imread(join(input_data_dirs[i], input_files[i]), cv2.IMREAD_UNCHANGED) for i in range(len(input_file_idx))]
+        image = [cv2.imread(join(input_data_dirs[i], input_files[i]), cv2.IMREAD_UNCHANGED) for i in range(len(input_file_idx))]
         
-        x = [preprocess_image(x_i) for x_i in x]
-        x = np.concatenate(x, axis=-1)
+        x = [preprocess_image(x_i) for x_i in image]
+        x = np.concatenate(image, axis=-1)
 
         # Show image layers and exit:
-        x = unprocess_image(x, 8)
-        # for i in range(x.shape[-1]):
-        #     cv2.imshow('image', x[:, :, i])
+        # x = unprocess_image(image, 8)
+        # for i in range(image.shape[-1]):
+        #     cv2.imshow('image', image[:, :, i])
         #     cv2.waitKey(2000)
         # exit()
+
         label_file_idx = [label_keys.index(img_number) for label_keys in label_keys_lists]
         label_files = [label_files_lists[i][label_file_idx[i]] for i in range(len(label_file_idx))]
         labels = [np.expand_dims(cv2.imread(join(label_data_dirs[i], label_files[i]), cv2.IMREAD_GRAYSCALE), axis=-1) for i in range(len(label_file_idx))]
         labels = np.concatenate(labels, axis=-1)
-        preprocess_image(labels)
+        preprocess_label(labels)
         # cv2.imshow('label', labels)
         # cv2.waitKey(10000)
         # exit()
-        print('saving as', join(output_data_dir, dataset_name + str(img_number)), '...')
-        np.savez_compressed(join(output_data_dir, dataset_name + str(img_number)), x=x, y=labels)
-        print(x.shape, labels.shape)
+
+        x.append(image)
+        y.append(labels)
+        if j%100: # about 3 gigs uncompressed
+            x = np.array(x)
+            y = np.array(y)
+            print('x', x.shape, 'y', y.shape)
+            print('saving as', join(output_data_dir, dataset_name + str(img_number)), '...')
+            np.savez_compressed(join(output_data_dir, dataset_name + str(img_number)), x=x, y=y)
+            x = []
+            y = []
