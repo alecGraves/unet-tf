@@ -62,6 +62,7 @@ if __name__ == "__main__":
         input_keys_lists = [[name_key(f) for f in input_files] for input_files in input_file_lists]
 
         label_files_lists = [os.listdir(label_data_dir) for label_data_dir in label_data_dirs]
+        label_files_lists[0].sort(key=name_key) # this one is used to get the order of files
         label_keys_lists = [[name_key(f) for f in label_files] for label_files in label_files_lists]
 
         x = []
