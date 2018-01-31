@@ -19,7 +19,9 @@ from losses import crossentropy_loss, iou_loss
 from data import preprocess_label
 
 ### set these parameteres ###
-data_dir = 'C:\\data\\image_data'
+#base_folder = '/media/xena/Q/data/'
+base_folder = '/home/marvin'
+data_dir = base_folder + 'road_detector/train'
 training_split = .97
 unet_depth = 3
 batch_size = 8
@@ -45,7 +47,7 @@ def load_batch(datafiles, shape=[256, 256], flip_prob=.4, rotate_prob=.2, rotate
     data = np.add(data, 1.0)
     label = sample['y']
     label = np.expand_dims(label[:,:,0], -1)
-    label = preprocess_label(label) # oops TODO: do this when saving data.
+    # label = preprocess_label(label) # oops TODO: do this when saving data.
     # sample = [np.random.randn(1300, 1300, 7), np.random.randn(1300, 1300, 2)]
     while len(batch[0]) < batch_size:
         # print(np.max(label))

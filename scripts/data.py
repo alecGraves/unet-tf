@@ -1,7 +1,7 @@
-## this preparation tool is created for my data
-# it could be used as inspiration for other datasets
-# copyright 2018 shadySource
-# MIT Liscense
+# This preparation tool is created for my data.
+# It could be used as inspiration for other datasets.
+# Copyright 2018 shadySource
+# MIT License
 
 import os
 from os.path import join
@@ -44,9 +44,13 @@ if __name__ == "__main__":
     # for my files, the last integer in the filename is the data image number.
     name_key = lambda x : int(''.join([s for s in x[x.find('img'):] if s.isdigit()]))
 
-    output_data_dir = '/home/marvin/road_detector/train'
-    input_data = '/home/marvin/road_detector/unzipped/inputs'
-    labels_data = '/home/marvin/road_detector/unzipped/labels/'
+    #base_folder = '/media/xena/Q/data/'
+    base_folder = '/home/marvin'
+    
+
+    output_data_dir = base_folder + 'road_detector/train'
+    input_data = base_folder + 'road_detector/unzipped/inputs'
+    labels_data = base_folder + 'road_detector/unzipped/labels'
 
     for _dir in os.listdir(input_data):
 
@@ -113,7 +117,7 @@ if __name__ == "__main__":
                 np.savez_compressed(join(output_data_dir, _dir + str(img_number)), x=x, y=y)
                 x = []
                 y = []
-        # save anything left ovewr
+        # save anything left over
         x = np.array(x)
         y = np.array(y)
         print('x', x.shape, 'y', y.shape)
