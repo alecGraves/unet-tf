@@ -21,22 +21,25 @@ def preprocess_image(x, mean=None, std=None):
     return x.astype(np.float16)
 
 def unprocess_image(x, mean=None, std=None, bits=8):
+    channel_max = np.max(np.max(x, axis=0), axis=0).reshape(1, 1, x.shape[-1])
+    channel_max[channel_max < 1e-5] = 1000 
+    x = np.divide(x, channel_max) # scale to [0,1]
     if mean is not None and std is not None:
         x = (x + np.array(mean).reshape(1,1,x.shape[-1])) * np.array(std).reshape(1,1,x.shape[-1])
     else:
         x = np.divide(x, 2.0)
         x = np.add(x, 0.5)
-    x = np.multiply(x, 2**bits-1)
+    x = np.multiply(x, 2**bits-1) # 8 or 16-bit representation
     x = x.astype(np.uint8)
     return x
 
 def preprocess_label(x):
     x = x.astype(np.float16)
-    x = np.divide(x, 255)
+    x = np.divide(x, 255) # 8 bit representation
     return x
 
 def unprocess_label(x):
-    x = np.multiply(x, 255)
+    x = np.multiply(x, 255) # 8 bit representation
     x = x.astype(np.uint8)
     return x
 
@@ -119,4 +122,28 @@ if __name__ == "__main__":
         print('x', x.shape, 'y', y.shape)
         print('saving as', join(output_data_dir, _dir + str(img_number)), '...')
         np.savez_compressed(join(output_data_dir, _dir + str(img_number)), x=x, y=y)
-        print('!!SAVING COMPLETE!!')
+    print('!!SAVING COMPLETE!!')
+
+def data_generator(data_dir, batch_size=8, shape=[256, 256], flip_prob=.4):
+    while True:
+        for npz_file in os.listdir(data_dir):
+            data = np.load(join(data_dir, npz_file))
+            data_len = data['x'].shape[0]
+            for i in range(data_len):
+                image, mask = ([], [])
+                for i in range(batch_size):
+                    data_idx = np.random.randint(0, data_len)
+                    x_idx = np.random.randint(0, data.shape[0]-shape[0]) # cropping indices
+                    y_idx = np.random.randint(0, data.shape[1]-shape[1])
+                    x = data['x'][data_idx, x_idx:x_idx+shape[0], y_idx:y_idx+shape[1], :]
+                    y = data['y'][data_idx, x_idx:x_idx+shape[0], y_idx:y_idx+shape[1], :]
+                    if np.random.random() < flip_prob:
+                        if np.random.random() < 0.5:
+                            x = x[:,::-1,:]
+                            y = y[:,::-1,:]
+                        else:
+                            x = x[::-1,:,:]
+                            y = y[::-1,:,:]
+                    image.append(x)
+                    mask.append(y)
+                yield image, mask
