@@ -109,14 +109,14 @@ if __name__ == "__main__":
                 x = np.array(x)
                 y = np.array(y)
                 print('x', x.shape, 'y', y.shape)
-                print('saving as', join(output_data_dir, dataset_name + str(img_number)), '...')
-                np.savez_compressed(join(output_data_dir, dataset_name + str(img_number)), x=x, y=y)
+                print('saving as', join(output_data_dir, _dir + str(img_number)), '...')
+                np.savez_compressed(join(output_data_dir, _dir + str(img_number)), x=x, y=y)
                 x = []
                 y = []
         # save anything left ovewr
         x = np.array(x)
         y = np.array(y)
         print('x', x.shape, 'y', y.shape)
-        print('saving as', join(output_data_dir, dataset_name + str(img_number)), '...')
-        np.savez_compressed(join(output_data_dir, dataset_name + str(img_number)), x=x, y=y)
+        print('saving as', join(output_data_dir, _dir + str(img_number)), '...')
+        np.savez_compressed(join(output_data_dir, _dir + str(img_number)), x=x, y=y)
         print('!!SAVING COMPLETE!!')
