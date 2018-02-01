@@ -8,38 +8,36 @@ from os.path import join
 import cv2
 import numpy as np
 
+datamax = [   10,    10,    10,    10,  2000, 2000, 2000]
+# datamean =  [ 0.01271057,  0.01102448,  0.00970459,  0.01496124,  0.00893402,  0.01432037,  0.01338959]
+# datastd  = [ 0.15515137,  0.10876465 , 0.10717773,  0.15661621,  0.15698242,  0.19836426,  0.13061523]
+# datamean = [1.56652696, 1.09011534,    1.07365105,    1.59740709,  314.23654353,  398.08631865,  262.84795669]
+# datastd =  [  0.1086813,    0.09061887,   0.07617772,   0.12855516,  16.98786878,  26.78131989,  23.9744957 ]
+datamean = [ 0.11956787,  0.08380127 , 0.08282471 , 0.11938477 , 0.12207031,  0.15380859,  0.10076904]
+datastd = [ 0.021698,    0.01623535,  0.01527405,  0.02445984 , 0.01235962 , 0.01832581,  0.01791382]
+
 def preprocess_image(x, mean=None, std=None):
     x = x.astype(np.float64)
-    channel_max = np.max(np.max(x, axis=0), axis=0).reshape(1, 1, x.shape[-1])
-    channel_max[channel_max < .1] = 1000 
-    x = np.divide(x, channel_max)
-    if mean is not None and std is not None:
-        x = (x - np.array(mean).reshape(1,1,x.shape[-1])) / np.array(std).reshape(1,1,x.shape[-1]) 
-    else:
-        x = np.subtract(x, 0.5)
-        x = np.multiply(x, 2.0)
+    x = x/np.array(datamax).reshape(1, 1, x.shape[-1])
+    x = (x - 0.5+np.array(datamean).reshape(1,1,x.shape[-1])) / (0.5+np.array(datastd).reshape(1,1,x.shape[-1]))
+    print(np.min(x), np.max(x))
+    x[x > 1.] = 1.
+    x[x < -1.] = -1.
     return x.astype(np.float16)
 
 def unprocess_image(x, mean=None, std=None, bits=8):
-    channel_max = np.max(np.max(x, axis=0), axis=0).reshape(1, 1, x.shape[-1])
-    channel_max[channel_max < 1e-5] = 1000 
-    x = np.divide(x, channel_max) # scale to [0,1]
-    if mean is not None and std is not None:
-        x = (x + np.array(mean).reshape(1,1,x.shape[-1])) * np.array(std).reshape(1,1,x.shape[-1])
-    else:
-        x = np.divide(x, 2.0)
-        x = np.add(x, 0.5)
-    x = np.multiply(x, 2**bits-1) # 8 or 16-bit representation
+    x = (x) * np.array(datastd).reshape(1,1,x.shape[-1]) + np.array(datamean).reshape(1,1,x.shape[-1])
+    x = np.multiply(x, 2**bits-1)
     x = x.astype(np.uint8)
     return x
 
 def preprocess_label(x):
     x = x.astype(np.float16)
-    x = np.divide(x, 255) # 8 bit representation
+    x = np.divide(x, 255)
     return x
 
 def unprocess_label(x):
-    x = np.multiply(x, 255) # 8 bit representation
+    x = np.multiply(x, 255)
     x = x.astype(np.uint8)
     return x
 
@@ -80,8 +78,9 @@ if __name__ == "__main__":
             input_files = [input_file_lists[i][input_file_idx[i]] for i in range(len(input_file_idx))]
             image = [cv2.imread(join(input_data_dirs[i], input_files[i]), cv2.IMREAD_UNCHANGED) for i in range(len(input_file_idx))]
             
-            image = [preprocess_image(x_i) for x_i in image]
             image = np.concatenate(image, axis=-1)
+            image = preprocess_image(image)
+
 
             # Show image layers and exit:
             # image = unprocess_image(image, 8)
@@ -105,6 +104,13 @@ if __name__ == "__main__":
             #     print(np.max(labels[:, :, i]))
             #     print(np.min(labels[:, :, i]))
             # exit()
+
+            # measure mean and std
+            # x.append(np.mean(np.mean(image, axis=0), axis=0))
+            # print('mean',np.mean(np.array(x), axis=0))
+            # y.append(np.std(np.std(image, axis=0), axis=0))
+            # print('std', np.mean(np.array(y), axis=0))
+            # continue
 
             x.append(image)
             y.append(labels)
