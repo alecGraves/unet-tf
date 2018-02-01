@@ -20,7 +20,7 @@ import tensorflow as tf
 tf.set_random_seed(SEED)
 
 from model import UNet
-from unet import create_unet
+# from unet import create_unet
 from data import data_generator
 from utils import IOU
 
@@ -30,11 +30,11 @@ config.gpu_options.allow_growth = True
 sess = tf.Session(config=config)
 
 ''' Users define data loader (with train and test) '''
-img_shape = [256, 256]
-batch_size = 8
+img_shape = [512, 512]
+batch_size = 6
 epochs = 10
 steps_per_epoch = 28*75 # 28 npz's averaging 75 images a piece
-train_dir = 'D:\\data\\road_detector\\train2'
+train_dir = 'D:\\data\\road_detector\\train3'
 val_dir = 'D:\\data\\road_detector\\val'
 load_from_checkpoint = ''
 checkpoint_path = os.path.join('..', 'training', 'weights')
@@ -47,9 +47,10 @@ num_test_samples = 100
 label = tf.placeholder(tf.float32, shape=[None]+img_shape + [1])
 
 with tf.name_scope('unet'):
-    model = UNet().create_model(img_shape=img_shape+[7], num_class=1)
+    model = UNet().create_model(img_shape=img_shape+[3], num_class=1)
     img = model.input
     pred = model.output
+    # img, pred = create_unet(in_shape=img_shape+[7], out_channels=1, depth=5)
 
 with tf.name_scope('cross_entropy'):
     cross_entropy_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=label, logits=pred))

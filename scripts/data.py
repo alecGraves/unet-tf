@@ -131,7 +131,7 @@ if __name__ == "__main__":
         np.savez_compressed(join(output_data_dir, _dir + str(img_number)), x=x, y=y)
     print('!!SAVING COMPLETE!!')
 
-def data_generator(data_dir, batch_size=8, shape=[256, 256], flip_prob=.4):
+def data_generator(data_dir, batch_size=8, shape=[256, 256], flip_prob=.5):
     while True:
         for npz_file in os.listdir(data_dir):
             data = np.load(join(data_dir, npz_file))
@@ -142,18 +142,20 @@ def data_generator(data_dir, batch_size=8, shape=[256, 256], flip_prob=.4):
                 image, mask = ([], [])
                 for i in range(batch_size):
                     data_idx = np.random.randint(0, data_len)
-                    x_idx = np.random.randint(0, data_x.shape[1]-shape[0]) # cropping indices
-                    y_idx = np.random.randint(0, data_x.shape[2]-shape[1])
-                    x = data_x[data_idx, x_idx:x_idx+shape[0], y_idx:y_idx+shape[1], :]
-                    y = data_y[data_idx, x_idx:x_idx+shape[0], y_idx:y_idx+shape[1], :]
+                    # cropping indices
+                    # x_idx = np.random.randint(0, data_x.shape[1]-shape[0]) 
+                    # y_idx = np.random.randint(0, data_x.shape[2]-shape[1])
+                    # x = data_x[data_idx, x_idx:x_idx+shape[0], y_idx:y_idx+shape[1], :]
+                    # y = data_y[data_idx, x_idx:x_idx+shape[0], y_idx:y_idx+shape[1], :]
+                    x = data_x[data_idx]
+                    y = data_y[data_idx]
                     if np.random.random() < flip_prob:
                         if np.random.random() < 0.5:
                             x = x[:,::-1,:]
                             y = y[:,::-1,:]
-                        else:
+                        if np.random.random() < 0.5:
                             x = x[::-1,:,:]
                             y = y[::-1,:,:]
                     image.append(x)
-                    # mask.append(y)
-                    mask.append(np.expand_dims(y[..., 0], axis=-1)) # only segmentation mask
+                    mask.append(y)
                 yield image, mask

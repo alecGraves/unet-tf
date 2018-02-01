@@ -4,14 +4,16 @@ import numpy as np
 import cv2
 
 from model import UNet
+# from unet import create_unet
 from data import unprocess_label, unprocess_image, data_generator
 
 sess = tf.Session()
 
 val_dir = 'D:\\data\\road_detector\\val'
-load_from_checkpoint = '..\\training\\weights\\model-14699'
-img_shape = [265, 256]
-test_generator = data_generator(val_dir, batch_size=8, shape=img_shape, flip_prob=0)
+# val_dir = 'D:\\data\\road_detector\\train2'
+load_from_checkpoint = '..\\training\\weights\\model-6299'
+img_shape = [512, 512]
+test_generator = data_generator(val_dir, batch_size=48, shape=img_shape, flip_prob=0)
 
 num_test_samples = 100
 
@@ -19,6 +21,8 @@ with tf.name_scope('unet'):
     model = UNet().create_model(img_shape=img_shape+[7], num_class=1)
     img = model.input
     pred = model.output
+    # img, pred = create_unet(in_shape=img_shape+[7], out_channels=1, depth=5, training=True)
+
 
 saver = tf.train.Saver()
 
@@ -57,7 +61,7 @@ with sess.as_default():
             # for j in range(x_batch.shape[-1]):
             #     cv2.imshow()
             # for j in range(pred_logits.shape[-1]):
-            cv2.imshow('image', image[...,0])
+            cv2.imshow('image', image[...,-1])
             cv2.imshow('pred',pred_logits[i][...,0])
             cv2.imshow('label',y_batch[i][...,0])
-            cv2.waitKey(500)
+            cv2.waitKey(1000)
