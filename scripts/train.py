@@ -20,6 +20,7 @@ import tensorflow as tf
 tf.set_random_seed(SEED)
 
 from model import UNet
+from unet import create_unet
 from data import data_generator
 from utils import IOU
 
@@ -33,9 +34,9 @@ img_shape = [256, 256]
 batch_size = 8
 epochs = 10
 steps_per_epoch = 28*75 # 28 npz's averaging 75 images a piece
-train_dir = 'D:\\data\\road_detector\\train'
+train_dir = 'D:\\data\\road_detector\\train2'
 val_dir = 'D:\\data\\road_detector\\val'
-load_from_checkpoint = 'C:\\Users\\alec0\\Documents\\GitHub\\unet-tf\\training\\weightsmodel-6299'
+load_from_checkpoint = ''
 checkpoint_path = os.path.join('..', 'training', 'weights')
 tensorboard_path = os.path.join('..', 'training', 'logs')
 train_generator = data_generator(train_dir, batch_size=batch_size, shape=img_shape, flip_prob=.4)
@@ -43,10 +44,10 @@ test_generator = data_generator(val_dir, batch_size=batch_size, shape=img_shape,
 
 num_test_samples = 100
 
-label = tf.placeholder(tf.float32, shape=[None]+img_shape + [2])
+label = tf.placeholder(tf.float32, shape=[None]+img_shape + [1])
 
 with tf.name_scope('unet'):
-    model = UNet().create_model(img_shape=img_shape+[7], num_class=2)
+    model = UNet().create_model(img_shape=img_shape+[7], num_class=1)
     img = model.input
     pred = model.output
 

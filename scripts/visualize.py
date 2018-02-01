@@ -16,7 +16,7 @@ test_generator = data_generator(val_dir, batch_size=8, shape=img_shape, flip_pro
 num_test_samples = 100
 
 with tf.name_scope('unet'):
-    model = UNet().create_model(img_shape=img_shape+[7], num_class=2)
+    model = UNet().create_model(img_shape=img_shape+[7], num_class=1)
     img = model.input
     pred = model.output
 
@@ -60,4 +60,4 @@ with sess.as_default():
             cv2.imshow('image', image[...,0])
             cv2.imshow('pred',pred_logits[i][...,0])
             cv2.imshow('label',y_batch[i][...,0])
-            cv2.waitKey(5000)
+            cv2.waitKey(500)
