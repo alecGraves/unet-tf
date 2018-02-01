@@ -8,5 +8,6 @@ def IOU(y_true, y_pred):
     union = y_true + y_pred - intersection
     intersection = np.sum(np.sum(intersection, axis=0), axis=0)
     union = np.sum(np.sum(union, axis=0), axis=0)
-    return np.mean(intersection / union)
+    iou = intersection / union
+    return [iou[0], iou[1]]
 
