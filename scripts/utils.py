@@ -9,5 +9,5 @@ def IOU(y_true, y_pred):
     intersection = np.sum(np.sum(intersection, axis=0), axis=0)
     union = np.sum(np.sum(union, axis=0), axis=0)
     iou = intersection / union
-    return [iou[0], iou[1]]
+    return iou
 

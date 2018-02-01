@@ -154,5 +154,6 @@ def data_generator(data_dir, batch_size=8, shape=[256, 256], flip_prob=.4):
                             x = x[::-1,:,:]
                             y = y[::-1,:,:]
                     image.append(x)
-                    mask.append(y)
+                    # mask.append(y)
+                    mask.append(np.expand_dims(y[..., 0], axis=-1)) # only segmentation mask
                 yield image, mask
