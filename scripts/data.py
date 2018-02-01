@@ -20,7 +20,7 @@ def preprocess_image(x, mean=None, std=None):
     x = x.astype(np.float64)
     x = x/np.array(datamax).reshape(1, 1, x.shape[-1])
     x = (x - 0.5+np.array(datamean).reshape(1,1,x.shape[-1])) / (0.5+np.array(datastd).reshape(1,1,x.shape[-1]))
-    print(np.min(x), np.max(x))
+    # print(np.min(np.min(x, axis=0), axis=0), np.max(np.max(x, axis=0), axis=0))
     x[x > 1.] = 1.
     x[x < -1.] = -1.
     return x.astype(np.float16)
