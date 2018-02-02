@@ -13,11 +13,11 @@ from __future__ import print_function
 
 import os
 
-SEED=0 # set set to allow reproducing runs
+# SEED=0 # set set to allow reproducing runs
 import numpy as np
-np.random.seed(SEED)
+# np.random.seed(SEED)
 import tensorflow as tf
-tf.set_random_seed(SEED)
+# tf.set_random_seed(SEED)
 
 from model import UNet
 # from unet import create_unet
@@ -33,7 +33,7 @@ sess = tf.Session(config=config)
 img_shape = [512, 512]
 batch_size = 6
 epochs = 10
-steps_per_epoch = 28*75//batch_size # 28 npz's averaging 75 images a piece
+steps_per_epoch = 2*28*75//batch_size # 28 npz's averaging 75 images a piece
 train_dir = 'D:\\data\\road_detector\\train3'
 val_dir = 'D:\\data\\road_detector\\val'
 load_from_checkpoint = ''
@@ -99,7 +99,7 @@ with sess.as_default():
             saver.save(sess, os.path.join(checkpoint_path, 'model'), global_step=global_step)
             print ('save a checkpoint at '+ checkpoint_path+'model-'+str(it))
             print ('start testing {} samples...'.format(num_test_samples))
-            for ti in range(num_test_samples):
+            for ti in range(num_test_samples//batch_size):
                 x_batch, y_batch = next(test_generator)
                 # tensorflow wants a different tensor order
                 feed_dict = {   
