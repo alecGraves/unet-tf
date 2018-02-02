@@ -138,9 +138,9 @@ def data_generator(data_dir, batch_size=8, shape=[256, 256], flip_prob=.5):
             data_x =  data['x']
             data_y = data['y']
             data_len = data_x.shape[0]
-            for i in range(data_len):
+            for i in range(data_len//batch_size):
                 image, mask = ([], [])
-                for i in range(batch_size):
+                for j in range(batch_size):
                     data_idx = np.random.randint(0, data_len)
                     # cropping indices
                     # x_idx = np.random.randint(0, data_x.shape[1]-shape[0]) 
