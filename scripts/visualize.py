@@ -13,7 +13,7 @@ val_dir = 'D:\\data\\road_detector\\val'
 # val_dir = 'D:\\data\\road_detector\\train2'
 load_from_checkpoint = '..\\training\\weights\\model-2099'
 img_shape = [512, 512]
-test_generator = data_generator(val_dir, batch_size=48, shape=img_shape, flip_prob=0)
+test_generator = data_generator(val_dir, batch_size=12, shape=img_shape, flip_prob=0)
 
 num_test_samples = 100
 
@@ -61,7 +61,7 @@ with sess.as_default():
             # for j in range(x_batch.shape[-1]):
             #     cv2.imshow()
             # for j in range(pred_logits.shape[-1]):
-            cv2.imshow('image', image[...,-1])
+            cv2.imshow('image', image[..., -3:])
             cv2.imshow('pred',pred_logits[i][...,0])
             cv2.imshow('label',y_batch[i][...,0])
             cv2.waitKey(1000)
