@@ -11,14 +11,14 @@ sess = tf.Session()
 
 val_dir = 'D:\\data\\road_detector\\val'
 # val_dir = 'D:\\data\\road_detector\\train2'
-load_from_checkpoint = '..\\training\\weights\\model-6299'
+load_from_checkpoint = '..\\training\\weights\\model-2099'
 img_shape = [512, 512]
 test_generator = data_generator(val_dir, batch_size=48, shape=img_shape, flip_prob=0)
 
 num_test_samples = 100
 
 with tf.name_scope('unet'):
-    model = UNet().create_model(img_shape=img_shape+[7], num_class=1)
+    model = UNet().create_model(img_shape=img_shape+[3], num_class=1)
     img = model.input
     pred = model.output
     # img, pred = create_unet(in_shape=img_shape+[7], out_channels=1, depth=5, training=True)
