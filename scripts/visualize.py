@@ -11,9 +11,10 @@ sess = tf.Session()
 
 val_dir = 'D:\\data\\road_detector\\val'
 # val_dir = 'D:\\data\\road_detector\\train2'
-load_from_checkpoint = '..\\training\\weights\\model-2099'
+load_from_checkpoint = '..\\training\\weights\\model-4199'
 img_shape = [512, 512]
-test_generator = data_generator(val_dir, batch_size=12, shape=img_shape, flip_prob=0)
+batch_size = 12
+test_generator = data_generator(val_dir, batch_size=batch_size, shape=img_shape, flip_prob=0)
 
 num_test_samples = 100
 
@@ -36,7 +37,7 @@ with sess.as_default():
         except:
                 print ('unable to load checkpoint ...' + str(e))
         
-    for ti in range(num_test_samples):
+    for ti in range(num_test_samples//batch_size):
         # tensorflow wants a different tensor order
         x_batch, y_batch = next(test_generator)
         feed_dict = { 
