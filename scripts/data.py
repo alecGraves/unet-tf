@@ -7,6 +7,7 @@ MIT liscense
 # copyright 2018 shadySource
 # MIT Liscense
 
+
 import os
 from os.path import join
 import cv2
@@ -142,7 +143,7 @@ if __name__ == "__main__":
                 np.savez_compressed(join(output_data_dir, _dir + str(img_number)), x=x, y=y)
                 x = []
                 y = []
-        # save anything left ovewr
+        # save anything left over
         x = np.array(x)
         y = np.array(y)
         print('x', x.shape, 'y', y.shape)

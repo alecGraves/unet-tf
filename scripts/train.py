@@ -95,6 +95,7 @@ with sess.as_default():
     start = global_step.eval()
     for it in range(start, tot_iter):
         if it % steps_per_epoch == 0 or it == start:
+
             
             saver.save(sess, os.path.join(checkpoint_path, 'model'), global_step=global_step)
             print ('save a checkpoint at '+ checkpoint_path+'model-'+str(it))
