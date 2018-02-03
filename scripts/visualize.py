@@ -11,7 +11,7 @@ sess = tf.Session()
 
 val_dir = 'D:\\data\\road_detector\\val'
 # val_dir = 'D:\\data\\road_detector\\train2'
-load_from_checkpoint = '..\\training\\weights\\model-4199'
+load_from_checkpoint = '..\\training\\weights\\model-2799'
 img_shape = [512, 512]
 batch_size = 12
 test_generator = data_generator(val_dir, batch_size=batch_size, shape=img_shape, flip_prob=0)

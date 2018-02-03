@@ -33,7 +33,7 @@ sess = tf.Session(config=config)
 img_shape = [512, 512]
 batch_size = 6
 epochs = 10
-steps_per_epoch = 2*28*75//batch_size # 28 npz's averaging 75 images a piece
+steps_per_epoch = 2*2500//batch_size # 28 npz's averaging 75 images a piece
 train_dir = 'D:\\data\\road_detector\\train3'
 val_dir = 'D:\\data\\road_detector\\val'
 load_from_checkpoint = ''

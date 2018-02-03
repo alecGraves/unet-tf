@@ -19,6 +19,21 @@ def preprocess_image(x):
     return x.astype(np.float16)
 
 def unprocess_image(x):
+    x = x.astype(np.float64)
+    x = x / 2
+    x = x + 0.5
+    x = x * 255
+    x = x.astype(np.uint8)
+    return x
+
+def _unprocess_image(x):
+    '''
+    This is a mistake which resulted in the training data being 
+    messed up. Notice '0.' is added instead of '0.5'
+    this results in old models not working unless this is used
+    while loading from PIL
+    '''
+    x = x.astype(np.float64)
     x = x / 2
     x = x + 0.
     x = x * 255
