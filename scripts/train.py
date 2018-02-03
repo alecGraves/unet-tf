@@ -1,147 +1,134 @@
 '''
-Train a network on a dataset. Looks in hardcoded directory for npz files which are train/test pairs.
-For every x, y data pair, save a npz in the data_dir.
-ex.
-for i in range(len(images)):
-    np.save('data_dir/data'+str(i), x=images[i], y=labels[i])
-
-model weights are saved in ../training/weights
+ * @author [Zizhao Zhang]
+ * @email [zizhao@cise.ufl.edu]
+ * @create date 2017-05-19 03:06:32
+ * @modify date 2017-05-19 03:06:32
+ * @desc [description]
+ * MIT License
 '''
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import os
-import time
+
+# SEED=0 # set set to allow reproducing runs
 import numpy as np
-from skimage.transform import rotate
+# np.random.seed(SEED)
 import tensorflow as tf
-join = os.path.join
+# tf.set_random_seed(SEED)
 
-from unet import create_unet
-from losses import crossentropy_loss, iou_loss
-from data import preprocess_label
+from model import UNet
+# from unet import create_unet
+from data import data_generator
+from utils import IOU
 
-### set these parameteres ###
-#base_folder = '/media/xena/Q/data/'
-base_folder = '/home/marvin'
-data_dir = base_folder + 'road_detector/train'
-training_split = .97
-unet_depth = 3
-batch_size = 8
-num_epochs = 1
-network_name = 'net' # used for training and scope
-save_path = join('..', 'training', 'weights')
+# configuration session
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+sess = tf.Session(config=config)
 
+''' Users define data loader (with train and test) '''
+img_shape = [512, 512]
+batch_size = 6
+epochs = 10
+steps_per_epoch = 2*2500//batch_size # 28 npz's averaging 75 images a piece
+train_dir = 'D:\\data\\road_detector\\train3'
+val_dir = 'D:\\data\\road_detector\\val'
+load_from_checkpoint = ''
+checkpoint_path = os.path.join('..', 'training', 'weights')
+tensorboard_path = os.path.join('..', 'training', 'logs')
+train_generator = data_generator(train_dir, batch_size=batch_size, shape=img_shape, flip_prob=.4)
+test_generator = data_generator(val_dir, batch_size=batch_size, shape=img_shape, flip_prob=0)
 
-### Data Management ###
-# read the data files
-data_files = os.listdir(data_dir)
-train_files = data_files[:int(len(data_files)*training_split)]
-val_files = data_files[int(len(data_files)*training_split):]
+num_test_samples = 100
 
-# function to load the batches
-def load_batch(datafiles, shape=[256, 256], flip_prob=.4, rotate_prob=.2, rotate_angle=[-45, 45]):
-    """Loads a batch of data from the data directory. See description above."""
-    print('loading')
-    batch = [[], []]
-    idx = np.random.randint(0, len(datafiles)-1)
-    sample = np.load(join(data_dir, datafiles[idx]))
-    data = sample['x']
-    data = np.add(data, 1.0)
-    label = sample['y']
-    label = np.expand_dims(label[:,:,0], -1)
-    # label = preprocess_label(label) # oops TODO: do this when saving data.
-    # sample = [np.random.randn(1300, 1300, 7), np.random.randn(1300, 1300, 2)]
-    while len(batch[0]) < batch_size:
-        # print(np.max(label))
-        # exit()
-        x_idx = np.random.randint(0, data.shape[0]-shape[0])
-        y_idx = np.random.randint(0, data.shape[1]-shape[1])
-        batch_data = data[x_idx:x_idx+shape[0], y_idx:y_idx+shape[1]]
-        batch_label = label[x_idx:x_idx+shape[0], y_idx:y_idx+shape[1]]
-        if np.random.random() < flip_prob:
-            if np.random.random() < 0.5:
-                batch_data = batch_data[:,::-1,...]
-                batch_label = batch_label[:,::-1,...]
-            else:
-                batch_data = batch_data[::-1,:,...]
-                batch_label = batch_label[::-1,:,...]
-        # if np.random.random() < rotate_prob: # dont use, causes white boarders
-        #     angle = np.random.randint(rotate_angle[0], rotate_angle[1])
-        #     batch_data = rotate(batch_data, angle)
-        #     batch_label = rotate(batch_label, angle)
-        batch[0].append(batch_data)
-        batch[1].append(batch_label)
-    print('loading complete')
-    return [np.array(b) for b in batch]
+label = tf.placeholder(tf.float32, shape=[None]+img_shape + [1])
 
-### Building the Graph ###
-def connect_loss(batch, net):
-    '''connects the loss function to the graph, 
-    returns loss tensor'''
-    with tf.name_scope('loss'):
-        label = tf.placeholder(tf.float32, shape=batch[1].shape, name='label')
-        loss = iou_loss(label, net, batch[1].shape[-1])
-    return loss
+with tf.name_scope('unet'):
+    model = UNet().create_model(img_shape=img_shape+[3], num_class=1)
+    img = model.input
+    pred = model.output
+    # img, pred = create_unet(in_shape=img_shape+[7], out_channels=1, depth=5)
 
-def connect_optimizer(cost, learning_rate=1e-5, train_vars=None):
-    '''connects optimizer to the graph,
-    give it the cost tensor to minimize.
-    returns the training op.'''
-    with tf.name_scope('optimizer'):
-        optimizer = tf.train.AdamOptimizer(learning_rate)
-        train_op = optimizer.minimize(cost, var_list=train_vars, colocate_gradients_with_ops=True)
-    return train_op
+with tf.name_scope('cross_entropy'):
+    cross_entropy_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=label, logits=pred))
 
-def check_path(save_path=None):
-    '''makes sure output path exists'''
-    if save_path is not None and not(os.path.exists(save_path)):
-        os.makedirs(save_path)
+global_step = tf.Variable(0, name='global_step', trainable=False)
+with tf.name_scope('learning_rate'):
+    learning_rate = tf.train.exponential_decay(0.0001, global_step,
+                                           steps_per_epoch, 0.9, staircase=True)
 
-if __name__ == "__main__":
-    ### Training  ###
-    with tf.Session() as sess:
-        with tf.device('/gpu:0'):
-            batch = load_batch(train_files)
+train_step = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(cross_entropy_loss, global_step=global_step)
 
-            # build the network graph
-            net = create_unet(in_shape=batch[0].shape, out_channels=batch[1][0].shape[-1], name=network_name)
-
-        with tf.device('/cpu:0'):
-            saver = tf.train.Saver()
-            check_path(save_path)
-
-        with tf.device('/gpu:0'):
-            loss = connect_loss(batch, net)
-            train_op = connect_optimizer(loss)
+''' Tensorboard visualization '''
+# cleanup pervious info
+if load_from_checkpoint == '':
+    cf = os.listdir(checkpoint_path)
+    for item in cf: 
+        if 'event' in item: 
+            os.remove(os.path.join(checkpoint_path, item))
+# define summary for tensorboard
+tf.summary.scalar('cross_entropy_loss', cross_entropy_loss)
+tf.summary.scalar('learning_rate', learning_rate)
+summary_merged = tf.summary.merge_all()
+# define saver
+train_writer = tf.summary.FileWriter(tensorboard_path, sess.graph)
+saver = tf.train.Saver() # must be added in the end
 
 
-        sess.run(tf.global_variables_initializer())
+tot_iter = steps_per_epoch * epochs
+init_op = tf.global_variables_initializer()
+sess.run(init_op)
 
-        losses = {'train' : [], 'val' : [], 'avgVal' : 1000000000}
-        for i in range(num_epochs*len(train_files)):
-            # train on a batch
-            batch = load_batch(train_files)
-            print('run')
-            _, score = sess.run([train_op, loss], feed_dict={network_name+'/input:0':batch[0], 'loss/label:0':batch[1]})
-            losses['train'].append(score)
-            print('run complete')
-            # test on a validation batch
-            if i % 10 == 0:
-                batch = load_batch(val_files)
-                score = sess.run(loss, feed_dict={network_name+'/input:0':batch[0], 'loss/label:0':batch[1]})
-                losses['val'].append(score)
+with sess.as_default():
+    # restore from a checkpoint if exists
+    # the name_scope can not change 
+    if load_from_checkpoint != '':
+        try:
+            saver.restore(sess,load_from_checkpoint)
+            print ('--> load from checkpoint '+load_from_checkpoint)
+        except:
+                print ('unable to load checkpoint ...' + str(e))
+    # debug
+    start = global_step.eval()
+    for it in range(start, tot_iter):
+        if it % steps_per_epoch == 0 or it == start:
 
-            if i > 100:
-                avg_val = sum(losses['val'][-10:])
-                if avg_val < losses['avgVal']:
-                    losses['avgVal'] = sum(losses['val'][-10:])
-                    print('Saving model best')
-                    saver.save(sess, join(save_path, 'trained-'+network_name+'best'), write_meta_graph=False)
-
-            if ((i % (len(train_files)//batch_size//10)) == 0): # every 10th of an epoch
-                print('Saving model regular')
-                saver.save(sess, join(save_path, 'trained-'+network_name), global_step=i, write_meta_graph=False)
             
-            if i > 10:
-                print("Train Loss: {} | Val Loss: {}".format(losses['train'][-1], losses['val'][-1]))
-            else:
-                print("Train Loss: {} | Val Loss: Too Early".format(losses['train'][-1]))
+            saver.save(sess, os.path.join(checkpoint_path, 'model'), global_step=global_step)
+            print ('save a checkpoint at '+ checkpoint_path+'model-'+str(it))
+            print ('start testing {} samples...'.format(num_test_samples))
+            for ti in range(num_test_samples//batch_size):
+                x_batch, y_batch = next(test_generator)
+                # tensorflow wants a different tensor order
+                feed_dict = {   
+                                img: x_batch,
+                                label: y_batch,
+                            }
+                loss, pred_logits = sess.run([cross_entropy_loss, pred], feed_dict=feed_dict)
+                pred_map_batch = np.argmax(pred_logits, axis=3)
+        
+        x_batch, y_batch = next(train_generator)
+        feed_dict = {   img: x_batch,
+                        label: y_batch
+                    }
+        _, loss, summary, lr, pred_logits = sess.run([train_step, 
+                                    cross_entropy_loss, 
+                                    summary_merged,
+                                    learning_rate,
+                                    pred
+                                    ], feed_dict=feed_dict)
+        global_step.assign(it).eval()
+        train_writer.add_summary(summary, it)
+        
+        score = IOU(1/(1+np.exp(-pred_logits[0])), y_batch[0])
 
+       
+        if it % 20 == 0 :
+            try:
+                print ('[iter {}, epoch {}]: lr={} loss={}, IOU={}'.format(it, float(it)/steps_per_epoch, lr, loss, score))
+            except:
+                pass
+        
