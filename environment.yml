@@ -7,5 +7,6 @@ dependencies:
 - pillow=5.0.0
 - python=3.5.4
 - tensorflow-gpu=1.1.0
+- scikit-learn=0.19.1
 
 

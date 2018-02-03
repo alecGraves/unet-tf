@@ -1,11 +1,11 @@
 '''
 created by shadysource
-MIT liscense
+MIT license 
 '''
 ## this preparation tool is created for my data
 # it could be used as inspiration for other datasets
 # copyright 2018 shadySource
-# MIT Liscense
+# MIT license 
 
 
 import os
