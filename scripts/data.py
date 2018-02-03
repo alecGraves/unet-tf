@@ -1,3 +1,7 @@
+'''
+created by shadysource
+MIT liscense
+'''
 ## this preparation tool is created for my data
 # it could be used as inspiration for other datasets
 # copyright 2018 shadySource

@@ -1,5 +1,6 @@
 '''
 created by shadysource
+MIT liscense
 '''
 import numpy as np
 
