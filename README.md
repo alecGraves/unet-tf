@@ -1,7 +1,7 @@
 # unet-tf
 UNET implemented in tf
 
-Designed a GIS road-detection data competition on Topcoder.
+Designed for a GIS road-detection data competition on Topcoder.
 
 Final result:
 Model can find roads, and supporting clustering technique can vectorize the segmentation.
